@@ -4,25 +4,31 @@ from tensorflow.keras.layers import LSTM, Dense
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 
-def train_model(df: pd.DataFrame, look_back=30):
+def train_model(df: pd.DataFrame, look_back=5):  # default dari 30 menjadi 5
     scaler = MinMaxScaler()
     scaled_data = scaler.fit_transform(df[['Value']])
-    
+
     X, y = [], []
     for i in range(look_back, len(scaled_data)):
         X.append(scaled_data[i-look_back:i, 0])
         y.append(scaled_data[i, 0])
+
     X, y = np.array(X), np.array(y)
+
+    if len(X) == 0:
+        raise ValueError("Data tidak cukup untuk training, tambahkan data atau kurangi look_back.")
+
     X = np.reshape(X, (X.shape[0], X.shape[1], 1))
-    
+
     model = Sequential()
     model.add(LSTM(50, return_sequences=True, input_shape=(X.shape[1], 1)))
     model.add(LSTM(50))
     model.add(Dense(1))
     model.compile(optimizer='adam', loss='mse')
     model.fit(X, y, epochs=5, batch_size=16, verbose=0)
-    
+
     return model, scaler
+
 
 def predict_future(df: pd.DataFrame, model, scaler, look_back=30, n_future=7):
     last_values = scaler.transform(df[['Value']])[-look_back:]
