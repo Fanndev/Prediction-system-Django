@@ -1,7 +1,11 @@
 from fastapi import APIRouter, UploadFile, File
-from schema.prediction import PredictionResponse
-from utils import data_processing, visualization
-from models import prediction_model
+from fastapi import APIRouter, Depends
+from app.models.user import User
+from app.utils.auth import get_current_active_user
+
+from app.schema.prediction import PredictionResponse
+from app.utils import data_processing, visualization
+from app.models import prediction_model
 
 import pandas as pd
 import io
@@ -24,3 +28,11 @@ async def predict_from_csv(file: UploadFile = File(...)):
         predictions=[float(p) for p in predictions],
         plot_base64=plot_base64
     )
+
+@router.get("/predictions")
+def get_predictions(current_user: User = Depends(get_current_active_user)):
+    return {"message": f"Hello {current_user.username}, here are your predictions"}
+
+@router.post("/predictions")
+def create_prediction(current_user: User = Depends(get_current_active_user)):
+    return {"message": f"Prediction created for user {current_user.username}"}
